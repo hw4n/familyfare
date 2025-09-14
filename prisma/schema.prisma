@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 사용자 모델
+model User {
+  id             String        @id @default(cuid())
+  name           String        @unique // 이름으로 조회하므로 unique
+  hashedPassword String?       // 보안을 위한 해시된 비밀번호
+  balance        Int           @default(0) // 사용자 잔고 (원 단위)
+  lastDepositAt  DateTime?     // 마지막 입금일
+  
+  // 사용자가 참여한 구독 서비스
+  subscriptions  UserSubscription[]
+  
+  // 사용자가 참여한 거래들 (다대다 관계)
+  transactionParticipations TransactionParticipant[]
+  
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  @@map("users")
+}
+
+// 구독 서비스 모델 (Netflix, Spotify 등)
+model Service {
+  id            String        @id @default(cuid())
+  name          String        @unique // "netflix", "spotify" 등
+  displayName   String        // "Netflix", "Spotify" 등 표시용 이름
+  maxMembers    Int           @default(1) // 최대 공유 인원
+  
+  // 이 서비스를 사용하는 구독 정보
+  subscriptions UserSubscription[]
+  transactions  Transaction[]
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@map("services")
+}
+
+// 사용자-구독 서비스 중간 테이블 (다대다 관계)
+model UserSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  serviceId String
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  // 구독 참여 날짜
+  joinedAt  DateTime @default(now())
+  // 구독 탈퇴 날짜 (null이면 현재 구독 중)
+  leftAt    DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, serviceId])
+  @@map("user_subscriptions")
+}
+
+// 거래 내역 모델 (공유 거래)
+model Transaction {
+  id        String            @id @default(cuid())
+  serviceId String
+  
+  service   Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  // 전체 거래 금액 (원 단위) - 실제 결제된 총 금액
+  totalAmount Int
+  
+  // 거래 상태
+  status    TransactionStatus @default(PENDING)
+  
+  // 거래 유형
+  type      TransactionType   @default(SUBSCRIPTION)
+  
+  // 해당 월 (YYYY-MM 형식)
+  month     String            // "2025-01" 형식
+  
+  // 실제 결제/처리 날짜
+  paidAt    DateTime?
+  
+  // 거래 설명
+  description String?
+  
+  // 이 거래에 참여하는 사용자들
+  participants TransactionParticipant[]
+  
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  
+  @@index([serviceId, month])
+  @@index([status])
+  @@map("transactions")
+}
+
+// 거래 참여자 모델 (사용자-거래 다대다 관계)
+model TransactionParticipant {
+  id            String      @id @default(cuid())
+  userId        String
+  transactionId String
+  
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
+  // 이 사용자가 부담해야 할 금액 (총 금액을 참여자 수로 나눈 값)
+  shareAmount   Int
+  
+  // 개별 결제 상태 (각 참여자별로 납부 여부 추적)
+  paymentStatus TransactionStatus @default(PENDING)
+  
+  // 개별 결제 날짜
+  paidAt        DateTime?
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@unique([userId, transactionId])
+  @@map("transaction_participants")
+}
+
+// 거래 상태 열거형
+enum TransactionStatus {
+  PENDING   // 미납
+  PAID      // 납부 완료
+}
+
+// 거래 유형 열거형
+enum TransactionType {
+  SUBSCRIPTION // 구독료
+  DEPOSIT      // 입금
+}
