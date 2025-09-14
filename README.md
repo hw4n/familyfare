@@ -34,12 +34,9 @@ pnpm install
 # Database
 DATABASE_URL="postgresql://username:password@localhost:5432/familyfare?schema=public"
 
-# SQLite 사용시 (개발용)
-# DATABASE_URL="file:./dev.db"
-
-# Next.js
-NEXTAUTH_SECRET="your-secret-key-here"
-NEXTAUTH_URL="http://localhost:3000"
+# Security
+ADMIN_PASSWORD="xxxxxxxxxxxxxxxxxx"
+JWT_SECRET="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 ### 3. 데이터베이스 설정
