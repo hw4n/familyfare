@@ -8,13 +8,6 @@ import OverviewTab from "../components/OverviewTab";
 import ServicesTab from "../components/ServicesTab";
 import TransactionsTab from "../components/TransactionsTab";
 
-interface User {
-    id: string;
-    name: string;
-    balance: number;
-    totalUnpaidAmount: number;
-}
-
 interface Service {
     id: string;
     name: string;
@@ -44,7 +37,6 @@ interface Transaction {
 }
 
 export default function AdminDashboard() {
-    const [users, setUsers] = useState<User[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -55,29 +47,29 @@ export default function AdminDashboard() {
 
     // 인증 확인
     useEffect(() => {
-        checkAuth();
-    }, []);
+        const checkAuth = async () => {
+            try {
+                const response = await fetch("/api/admin/auth");
+                const data = await response.json();
 
-    const checkAuth = async () => {
-        try {
-            const response = await fetch("/api/admin/auth");
-            const data = await response.json();
+                if (!data.authenticated) {
+                    router.push("/admin/login");
+                    return;
+                }
 
-            if (!data.authenticated) {
+                await loadData();
+            } catch (error) {
+                console.error("Auth check failed:", error);
                 router.push("/admin/login");
-                return;
             }
+        };
 
-            await loadData();
-        } catch (error) {
-            console.error("Auth check failed:", error);
-            router.push("/admin/login");
-        }
-    };
+        checkAuth();
+    }, [router]);
 
     const loadData = async () => {
         try {
-            const [usersRes, servicesRes, transactionsRes] = await Promise.all([
+            const [, servicesRes, transactionsRes] = await Promise.all([
                 fetch("/api/user"),
                 fetch("/api/service"),
                 fetch("/api/transaction"),
@@ -202,7 +194,15 @@ export default function AdminDashboard() {
                         ].map((tab) => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
+                                onClick={() =>
+                                    setActiveTab(
+                                        tab.id as
+                                            | "overview"
+                                            | "users"
+                                            | "services"
+                                            | "transactions"
+                                    )
+                                }
                                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
                                     activeTab === tab.id
                                         ? "bg-blue-100 text-blue-700"

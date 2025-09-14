@@ -236,11 +236,16 @@ export async function POST(request: NextRequest) {
                 headers: { "Content-Type": "application/json" },
             }
         );
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error creating user:", error);
 
         // Unique constraint 에러 처리
-        if (error.code === "P2002") {
+        if (
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            error.code === "P2002"
+        ) {
             return new Response(
                 JSON.stringify({
                     error: "User with this name already exists",

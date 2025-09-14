@@ -37,25 +37,25 @@ export default function AdminUsers() {
     const router = useRouter();
 
     useEffect(() => {
-        checkAuth();
-    }, []);
+        const checkAuth = async () => {
+            try {
+                const response = await fetch("/api/admin/auth");
+                const data = await response.json();
 
-    const checkAuth = async () => {
-        try {
-            const response = await fetch("/api/admin/auth");
-            const data = await response.json();
+                if (!data.authenticated) {
+                    router.push("/admin/login");
+                    return;
+                }
 
-            if (!data.authenticated) {
+                await loadData();
+            } catch (error) {
+                console.error("Auth check failed:", error);
                 router.push("/admin/login");
-                return;
             }
+        };
 
-            await loadData();
-        } catch (error) {
-            console.error("Auth check failed:", error);
-            router.push("/admin/login");
-        }
-    };
+        checkAuth();
+    }, [router]);
 
     const loadData = async () => {
         try {

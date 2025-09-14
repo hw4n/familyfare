@@ -3,9 +3,34 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 
+interface User {
+    id: string;
+    name: string;
+    balance: number;
+    totalUnpaidAmount?: number;
+    lastDepositAt?: string;
+    activeSubscriptions?: Array<{
+        id: string;
+        service: {
+            id: string;
+            name: string;
+            displayName: string;
+        };
+    }>;
+}
+
+interface Service {
+    id: string;
+    name: string;
+    displayName: string;
+    maxMembers: number;
+    currentMembers: number;
+    availableSlots?: number;
+}
+
 export default function UsersTab({ onRefresh }: { onRefresh: () => void }) {
-    const [users, setUsers] = useState<any[]>([]);
-    const [services, setServices] = useState<any[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
     const [newUser, setNewUser] = useState({ name: "", balance: 0 });
     const [isCreating, setIsCreating] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -34,10 +59,9 @@ export default function UsersTab({ onRefresh }: { onRefresh: () => void }) {
                 const usersData = await usersRes.json();
                 const users = usersData.users || [];
                 // activeSubscriptions 필드명 통일
-                const normalizedUsers = users.map((user: any) => ({
+                const normalizedUsers = users.map((user: User) => ({
                     ...user,
-                    activeSubscriptions:
-                        user.activeSubscriptions || user.subscriptions || [],
+                    activeSubscriptions: user.activeSubscriptions || [],
                 }));
                 setUsers(normalizedUsers);
             } else {
@@ -295,9 +319,9 @@ export default function UsersTab({ onRefresh }: { onRefresh: () => void }) {
                                 현재 구독 서비스
                             </h4>
                             <div className="space-y-2">
-                                {user.activeSubscriptions?.length > 0 ? (
-                                    user.activeSubscriptions.map(
-                                        (subscription: any) => (
+                                {(user.activeSubscriptions?.length ?? 0) > 0 ? (
+                                    user.activeSubscriptions!.map(
+                                        (subscription) => (
                                             <div
                                                 key={subscription.id}
                                                 className="flex justify-between items-center bg-green-50 px-3 py-2 rounded-lg"
@@ -339,15 +363,15 @@ export default function UsersTab({ onRefresh }: { onRefresh: () => void }) {
                             <div className="grid grid-cols-2 gap-2">
                                 {services
                                     .filter(
-                                        (service: any) =>
+                                        (service) =>
                                             !user.activeSubscriptions?.some(
-                                                (sub: any) =>
+                                                (sub) =>
                                                     sub.service.id ===
                                                     service.id
                                             ) &&
                                             (service.availableSlots || 0) > 0
                                     )
-                                    .map((service: any) => (
+                                    .map((service) => (
                                         <button
                                             key={service.id}
                                             onClick={() =>
@@ -367,10 +391,9 @@ export default function UsersTab({ onRefresh }: { onRefresh: () => void }) {
                                     ))}
                             </div>
                             {services.filter(
-                                (service: any) =>
+                                (service) =>
                                     !user.activeSubscriptions?.some(
-                                        (sub: any) =>
-                                            sub.service.id === service.id
+                                        (sub) => sub.service.id === service.id
                                     ) && (service.availableSlots || 0) > 0
                             ).length === 0 && (
                                 <div className="text-sm text-gray-500">

@@ -127,11 +127,16 @@ export default function TransactionsTab({
                     message += `\n• 환불 대상: ${result.refundInfo.refundedCount}명`;
                     message += `\n• 총 환불 금액: ₩${result.refundInfo.totalRefundedAmount.toLocaleString()}`;
                     message += `\n\n환불 상세:`;
-                    result.refundInfo.refundedUsers.forEach((user: any) => {
-                        message += `\n• ${
-                            user.userName
-                        }: ₩${user.refundedAmount.toLocaleString()}`;
-                    });
+                    result.refundInfo.refundedUsers.forEach(
+                        (user: {
+                            userName: string;
+                            refundedAmount: number;
+                        }) => {
+                            message += `\n• ${
+                                user.userName
+                            }: ₩${user.refundedAmount.toLocaleString()}`;
+                        }
+                    );
                 }
 
                 alert(message);
@@ -179,15 +184,21 @@ export default function TransactionsTab({
 
                 if (results.length > 0) {
                     message += "상세 결과:\n";
-                    results.forEach((result: any) => {
-                        const status =
-                            result.status === "paid"
-                                ? "✅"
-                                : result.status === "already_paid"
-                                ? "✅"
-                                : "❌";
-                        message += `${status} ${result.userName}: ${result.message}\n`;
-                    });
+                    results.forEach(
+                        (result: {
+                            status: string;
+                            userName: string;
+                            message: string;
+                        }) => {
+                            const status =
+                                result.status === "paid"
+                                    ? "✅"
+                                    : result.status === "already_paid"
+                                    ? "✅"
+                                    : "❌";
+                            message += `${status} ${result.userName}: ${result.message}\n`;
+                        }
+                    );
                 }
 
                 alert(message);
@@ -302,7 +313,7 @@ export default function TransactionsTab({
         }
         message += `\n상세 결과:\n`;
 
-        results.forEach((result, index) => {
+        results.forEach((result) => {
             const status = result.success ? "✅" : "❌";
             const transaction = result.transaction;
             message += `${status} ${transaction.service.displayName} (${transaction.month})`;

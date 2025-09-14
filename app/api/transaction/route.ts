@@ -82,10 +82,14 @@ export async function GET(request: NextRequest) {
         }
 
         // 거래 목록 조회 (필터링 가능)
-        const where: any = {};
+        const where: {
+            serviceId?: string;
+            month?: string;
+            status?: "PENDING" | "PAID";
+        } = {};
         if (serviceId) where.serviceId = serviceId;
         if (month) where.month = month;
-        if (status) where.status = status;
+        if (status) where.status = status as "PENDING" | "PAID";
 
         const transactions = await prisma.transaction.findMany({
             where,
@@ -264,7 +268,10 @@ export async function PATCH(request: NextRequest) {
 
         // 개별 참여자 결제 상태 업데이트
         if (participantId) {
-            const updateData: any = { paymentStatus: status };
+            const updateData: {
+                paymentStatus: "PENDING" | "PAID";
+                paidAt?: Date;
+            } = { paymentStatus: status as "PENDING" | "PAID" };
             if (status === "PAID" && !paidAt) {
                 updateData.paidAt = new Date();
             } else if (paidAt) {
@@ -292,7 +299,10 @@ export async function PATCH(request: NextRequest) {
 
         // 전체 거래 상태 업데이트
         if (transactionId) {
-            const updateData: any = { status };
+            const updateData: {
+                status: "PENDING" | "PAID";
+                paidAt?: Date;
+            } = { status: status as "PENDING" | "PAID" };
             if (status === "PAID" && !paidAt) {
                 updateData.paidAt = new Date();
             } else if (paidAt) {
@@ -324,10 +334,15 @@ export async function PATCH(request: NextRequest) {
             }),
             { status: 400, headers: { "Content-Type": "application/json" } }
         );
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error updating transaction:", error);
 
-        if (error.code === "P2025") {
+        if (
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            error.code === "P2025"
+        ) {
             return new Response(
                 JSON.stringify({
                     error: "Transaction or participant not found",

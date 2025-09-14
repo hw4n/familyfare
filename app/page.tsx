@@ -181,8 +181,8 @@ export default function Home() {
                                     />
                                 </motion.div>
                                 <p className="text-lg text-gray-600 dark:text-gray-300">
-                                    "{searchName}"에 대한 정보를 찾고
-                                    있습니다...
+                                    &ldquo;{searchName}&rdquo;에 대한 정보를
+                                    찾고 있습니다...
                                 </p>
                             </div>
                         ) : error ? (

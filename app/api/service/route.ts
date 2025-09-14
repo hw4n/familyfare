@@ -131,10 +131,15 @@ export async function POST(request: NextRequest) {
             status: 201,
             headers: { "Content-Type": "application/json" },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error creating service:", error);
 
-        if (error.code === "P2002") {
+        if (
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            error.code === "P2002"
+        ) {
             return new Response(
                 JSON.stringify({
                     error: "Service with this name already exists",
@@ -173,7 +178,10 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        const updateData: any = {};
+        const updateData: {
+            displayName?: string;
+            maxMembers?: number;
+        } = {};
         if (displayName !== undefined) updateData.displayName = displayName;
         if (maxMembers !== undefined) updateData.maxMembers = maxMembers;
 
@@ -186,10 +194,15 @@ export async function PATCH(request: NextRequest) {
             status: 200,
             headers: { "Content-Type": "application/json" },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error updating service:", error);
 
-        if (error.code === "P2025") {
+        if (
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            error.code === "P2025"
+        ) {
             return new Response(
                 JSON.stringify({ error: "Service not found" }),
                 { status: 404, headers: { "Content-Type": "application/json" } }

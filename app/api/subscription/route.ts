@@ -36,7 +36,11 @@ export async function GET(request: NextRequest) {
         const serviceId = searchParams.get("serviceId");
         const active = searchParams.get("active");
 
-        const where: any = {};
+        const where: {
+            userId?: string;
+            serviceId?: string;
+            leftAt?: null | { not: null };
+        } = {};
         if (userId) where.userId = userId;
         if (serviceId) where.serviceId = serviceId;
         if (active === "true") where.leftAt = null;
@@ -159,10 +163,15 @@ export async function POST(request: NextRequest) {
             status: 201,
             headers: { "Content-Type": "application/json" },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error creating subscription:", error);
 
-        if (error.code === "P2002") {
+        if (
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            error.code === "P2002"
+        ) {
             return new Response(
                 JSON.stringify({ error: "Subscription already exists" }),
                 { status: 409, headers: { "Content-Type": "application/json" } }
@@ -226,7 +235,7 @@ export async function DELETE(request: NextRequest) {
             status: 200,
             headers: { "Content-Type": "application/json" },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error cancelling subscription:", error);
 
         return new Response(
